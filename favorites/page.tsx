@@ -1,7 +1,6 @@
 "use client";
 
 import { DigestCard } from "@/components/DigestCard";
-import { format } from "date-fns";
 import { useEffect, useState } from "react";
 
 interface DigestItem {
@@ -15,26 +14,24 @@ interface DigestItem {
   date: string;
 }
 
-export default function Home() {
+export default function Favorites() {
   const [items, setItems] = useState<DigestItem[]>([]);
-  const [date, setDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchDigest() {
+    async function fetchFavorites() {
       try {
-        const res = await fetch("/api/digest/latest");
+        const res = await fetch("/api/favorites");
         const data = await res.json();
         setItems(data.items || []);
-        setDate(data.date);
       } catch (error) {
-        console.error("Failed to fetch digest", error);
+        console.error("Failed to fetch favorites", error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchDigest();
+    fetchFavorites();
   }, []);
 
   if (loading) {
@@ -45,14 +42,14 @@ export default function Home() {
     );
   }
 
-  if (!date || items.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          No digest available yet.
+          No favorites yet.
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Check back later or ensure the cron job has run.
+          Star items in your daily digest to save them here.
         </p>
       </div>
     );
@@ -62,10 +59,10 @@ export default function Home() {
     <div>
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Bixby Digest for {format(new Date(date), "MMMM do, yyyy")}
+          Your Favorites
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Good morning, Jason. Here are your top updates.
+          A collection of your saved articles.
         </p>
       </header>
 
