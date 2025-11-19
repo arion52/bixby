@@ -20,7 +20,7 @@ export async function sendDigestEmail(date: string, itemCount: number) {
           <p>We found <strong>${itemCount}</strong> items that match your interests today.</p>
           
           <div style="margin: 30px 0;">
-            <a href="https://jacyverse.tech/digest/${date}" 
+            <a href="https://bixby.jacyverse.tech/digest/${date}" 
                style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View Your Digest
             </a>
