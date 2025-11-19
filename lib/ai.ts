@@ -3,6 +3,8 @@ import { Article } from "./sources/rss";
 interface ProcessedItem {
   title: string;
   summary: string;
+  tldr: string;
+  sentiment: string;
   category: string;
   source_url: string;
   source_name: string;
@@ -38,6 +40,14 @@ Aim for 8-12 relevant items total, ensuring at least 2 from each main category: 
 For each relevant item, provide:
 - **Title**: Keep original or make it clearer
 - **Summary**: Exactly 2-3 sentences explaining what it is and why it matters to Jason
+- **TL;DR**: ONE sentence (10-15 words max) capturing the core point
+- **Sentiment**: Choose ONE tag that best describes the tone/content:
+  - "drama" - Controversy, gossip, conflicts, scandals
+  - "technical" - Deep technical content, complex topics, dense material
+  - "breaking" - Time-sensitive news, urgent updates, fresh announcements
+  - "hot_take" - Opinion pieces, controversial takes, provocative content
+  - "educational" - Tutorials, guides, learning resources, how-tos
+  - "neutral" - Standard news, updates, general information
 - **Category**: f1, dev_tools, ml_news, productivity, or misc
 
 Articles to process:
@@ -55,6 +65,8 @@ Return ONLY a JSON array:
   {
     "title": "...",
     "summary": "...",
+    "tldr": "...",
+    "sentiment": "...",
     "category": "...",
     "source_url": "...",
     "source_name": "..."

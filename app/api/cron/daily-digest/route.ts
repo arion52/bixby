@@ -1,13 +1,6 @@
 import { processWithAI } from "@/lib/ai";
 import { sendDigestEmail } from "@/lib/email";
-import { fetchAllReddit } from "@/lib/sources/reddit";
-import {
-  fetchF1RSS,
-  fetchMLRSS,
-  fetchProductivityRSS,
-  fetchRandomRSS,
-  fetchTechRSS,
-} from "@/lib/sources/rss";
+import { fetchFromAllSources } from "@/lib/sources/dynamic";
 import { supabaseAdmin } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -29,42 +22,20 @@ export async function GET(request: NextRequest) {
 
     console.log("Starting daily digest cron job...");
 
-    // 1. Fetch from all sources in parallel
-    const [
-      f1Articles,
-      techArticles,
-      mlArticles,
-      productivityArticles,
-      randomArticles,
-      redditArticles,
-    ] = await Promise.all([
-      fetchF1RSS(),
-      fetchTechRSS(),
-      fetchMLRSS(),
-      fetchProductivityRSS(),
-      fetchRandomRSS(),
-      fetchAllReddit(),
-    ]);
+    // 1. Fetch from all active sources dynamically
+    const allArticles = await fetchFromAllSources();
 
-    const allArticles = [
-      ...f1Articles,
-      ...techArticles,
-      ...mlArticles,
-      ...productivityArticles,
-      ...randomArticles,
-      ...redditArticles,
-    ];
+    // Group by category for balanced sampling
+    const byCategory = allArticles.reduce((acc, article) => {
+      if (!acc[article.category]) acc[article.category] = [];
+      acc[article.category].push(article);
+      return acc;
+    }, {} as Record<string, typeof allArticles>);
 
-    // Sample latest 15 from each source for balanced processing
+    // Sample 15 from each category for balanced processing
     const sampleSize = 15;
-    const sampledArticles = [
-      ...f1Articles.slice(0, sampleSize),
-      ...techArticles.slice(0, sampleSize),
-      ...mlArticles.slice(0, sampleSize),
-      ...productivityArticles.slice(0, sampleSize),
-      ...randomArticles.slice(0, sampleSize),
-      ...redditArticles.slice(0, sampleSize),
-    ];
+    const sampledArticles = Object.values(byCategory)
+      .flatMap(articles => articles.slice(0, sampleSize));
 
     // Shuffle to randomize order and avoid bias
     sampledArticles.sort(() => Math.random() - 0.5);
@@ -72,13 +43,10 @@ export async function GET(request: NextRequest) {
     console.log(
       `Fetched ${allArticles.length} articles total, sampled ${sampledArticles.length} for processing.`
     );
-    console.log("Articles fetched from sources:");
-    console.log(`F1 RSS: ${f1Articles.length}`);
-    console.log(`Tech RSS: ${techArticles.length}`);
-    console.log(`ML RSS: ${mlArticles.length}`);
-    console.log(`Productivity RSS: ${productivityArticles.length}`);
-    console.log(`Random RSS: ${randomArticles.length}`);
-    console.log(`Reddit: ${redditArticles.length}`);
+    console.log("Articles by category:");
+    Object.entries(byCategory).forEach(([cat, articles]) => {
+      console.log(`${cat}: ${articles.length}`);
+    });
 
     // 2. Process with AI
     const processedItems = await processWithAI(sampledArticles);

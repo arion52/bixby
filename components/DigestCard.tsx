@@ -8,10 +8,13 @@ interface DigestItem {
   id: string;
   title: string;
   summary: string;
+  tldr?: string;
+  sentiment?: string;
   source_url: string;
   source_name: string;
   category: string;
   is_favorited: boolean;
+  is_read?: boolean;
   date: string;
 }
 
@@ -22,6 +25,16 @@ interface DigestCardProps {
 export function DigestCard({ item: initialItem }: DigestCardProps) {
   const [item, setItem] = useState(initialItem);
   const [isLoading, setIsLoading] = useState(false);
+  const [showTldr, setShowTldr] = useState(false);
+
+  // Calculate reading time (assuming 200 words per minute)
+  const calculateReadingTime = (text: string): number => {
+    const words = text.trim().split(/\s+/).length;
+    const minutes = Math.ceil(words / 200);
+    return Math.max(1, minutes); // Minimum 1 minute
+  };
+
+  const readingTime = calculateReadingTime(item.summary);
 
   const toggleFavorite = async () => {
     setIsLoading(true);
@@ -34,6 +47,17 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
       console.error("Failed to toggle favorite", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const markAsRead = async () => {
+    if (!item.is_read) {
+      setItem((prev) => ({ ...prev, is_read: true }));
+      try {
+        await fetch(`/api/read/${item.id}`, { method: "POST" });
+      } catch (error) {
+        console.error("Failed to mark as read", error);
+      }
     }
   };
 
@@ -52,16 +76,49 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
     }
   };
 
+  const getSentimentBadge = (sentiment?: string) => {
+    if (!sentiment) return null;
+
+    switch (sentiment) {
+      case "drama":
+        return { emoji: "🔥", label: "Drama", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" };
+      case "technical":
+        return { emoji: "🧠", label: "Dense", color: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800" };
+      case "breaking":
+        return { emoji: "🚨", label: "Breaking", color: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800" };
+      case "hot_take":
+        return { emoji: "⚡", label: "Hot Take", color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800" };
+      case "educational":
+        return { emoji: "📚", label: "Educational", color: "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800" };
+      default:
+        return null;
+    }
+  };
+
+  const sentimentBadge = getSentimentBadge(item.sentiment);
+
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-900 border border-transparent rounded-2xl p-6 shadow-none hover:shadow-md transition-all duration-200 flex flex-col h-full group">
+    <div className={`bg-neutral-50 dark:bg-neutral-900 border border-transparent rounded-2xl p-6 shadow-none hover:shadow-md transition-all duration-200 flex flex-col h-full group ${
+      item.is_read ? "opacity-60" : ""
+    }`}>
       <div className="flex justify-between items-start mb-4">
-        <span
-          className={`text-xs font-medium px-3 py-1 rounded-lg border ${getCategoryColor(
-            item.category
-          )} tracking-wide`}
-        >
-          {item.category.replace("_", " ").toUpperCase()}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={`text-xs font-medium px-3 py-1 rounded-lg border ${getCategoryColor(
+              item.category
+            )} tracking-wide`}
+          >
+            {item.category.replace("_", " ").toUpperCase()}
+          </span>
+          <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+            {readingTime} min read
+          </span>
+          {sentimentBadge && (
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${sentimentBadge.color}`}>
+              {sentimentBadge.emoji} {sentimentBadge.label}
+            </span>
+          )}
+        </div>
         <button
           onClick={toggleFavorite}
           disabled={isLoading}
@@ -81,15 +138,26 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
           href={item.source_url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={markAsRead}
           className="flex items-start gap-2 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded"
         >
           {item.title}
         </a>
       </h3>
 
-      <p className="text-neutral-600 dark:text-neutral-300 text-base leading-relaxed mb-6 grow">
-        {item.summary}
-      </p>
+      <div className="mb-6 grow">
+        <p className="text-neutral-600 dark:text-neutral-300 text-base leading-relaxed">
+          {showTldr && item.tldr ? item.tldr : item.summary}
+        </p>
+        {item.tldr && (
+          <button
+            onClick={() => setShowTldr(!showTldr)}
+            className="mt-3 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+          >
+            {showTldr ? "Show full summary" : "Show TL;DR"}
+          </button>
+        )}
+      </div>
 
       <div className="flex justify-between items-center pt-4 border-t border-neutral-100 dark:border-neutral-800 mt-auto">
         <div className="flex flex-col">
