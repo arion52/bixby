@@ -28,7 +28,8 @@ export default function ArchiveDatePage() {
       try {
         const res = await fetch(`/api/digest/${date}`);
         const data = await res.json();
-        setItems(data.items || []);
+        // API returns array directly, not { items: [] }
+        setItems(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to fetch digest", error);
       } finally {

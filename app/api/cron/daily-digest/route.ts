@@ -9,12 +9,24 @@ import {
   fetchTechRSS,
 } from "@/lib/sources/rss";
 import { supabaseAdmin } from "@/lib/supabase";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300; // 5 minutes max for cron job
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Verify cron secret
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
+    if (!token || token !== process.env.CRON_SECRET) {
+      console.error("Unauthorized cron attempt");
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     console.log("Starting daily digest cron job...");
 
     // 1. Fetch from all sources in parallel
