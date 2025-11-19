@@ -3,6 +3,21 @@ import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export const maxDuration = 300;
 
+interface DigestItem {
+  id: string;
+  title: string;
+  summary: string;
+  tldr?: string;
+  sentiment?: string;
+  category: string;
+  source_url: string;
+  source_name: string;
+  date: string;
+  is_favorited: boolean;
+  is_read: boolean;
+  created_at: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret
@@ -45,7 +60,9 @@ export async function GET(request: NextRequest) {
       .limit(10);
 
     // Combine and deduplicate
-    const allArticles = [...(favoritedArticles || []), ...(readArticles || [])];
+    const typedFavorited = (favoritedArticles || []) as DigestItem[];
+    const typedRead = (readArticles || []) as DigestItem[];
+    const allArticles = [...typedFavorited, ...typedRead];
     const uniqueArticles = Array.from(
       new Map(allArticles.map(item => [item.id, item])).values()
     ).slice(0, 20);

@@ -22,14 +22,14 @@ export async function POST(
 
     const { error: updateError } = await supabaseAdmin
       .from("digest_items")
-      // @ts-expect-error
+      // @ts-expect-error Update type requires all fields but we only update is_favorited
       .update({ is_favorited: newStatus })
       .eq("id", id);
 
     if (updateError) throw updateError;
 
     return NextResponse.json({ success: true, is_favorited: newStatus });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update favorite" },
       { status: 500 }

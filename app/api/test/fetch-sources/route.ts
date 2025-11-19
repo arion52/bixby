@@ -1,6 +1,6 @@
-import { fetchAllReddit } from '@/lib/sources/reddit';
-import { fetchF1RSS, fetchMLRSS, fetchTechRSS } from '@/lib/sources/rss';
-import { NextResponse } from 'next/server';
+import { fetchAllReddit } from "@/lib/sources/reddit";
+import { fetchF1RSS, fetchMLRSS, fetchTechRSS } from "@/lib/sources/rss";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -24,9 +24,10 @@ export async function GET() {
         tech: tech.slice(0, 2),
         ml: ml.slice(0, 2),
         reddit: reddit.slice(0, 2),
-      }
+      },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

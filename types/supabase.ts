@@ -4,75 +4,98 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
 
 export interface Database {
   public: {
     Tables: {
       digest_items: {
         Row: {
-          id: string
-          date: string
-          category: string
-          title: string
-          summary: string
-          source_url: string
-          source_name: string | null
-          is_favorited: boolean
-          created_at: string
-        }
+          id: string;
+          date: string;
+          category: string;
+          title: string;
+          summary: string;
+          source_url: string;
+          source_name: string | null;
+          is_favorited: boolean;
+          created_at: string;
+        };
         Insert: {
-          id?: string
-          date: string
-          category: string
-          title: string
-          summary: string
-          source_url: string
-          source_name?: string | null
-          is_favorited?: boolean
-          created_at?: string
-        }
+          id?: string;
+          date: string;
+          category: string;
+          title: string;
+          summary: string;
+          source_url: string;
+          source_name?: string | null;
+          is_favorited?: boolean;
+          created_at?: string;
+        };
         Update: {
-          id?: string
-          date?: string
-          category?: string
-          title?: string
-          summary?: string
-          source_url?: string
-          source_name?: string | null
-          is_favorited?: boolean
-          created_at?: string
-        }
-      }
+          id?: string;
+          date?: string;
+          category?: string;
+          title?: string;
+          summary?: string;
+          source_url?: string;
+          source_name?: string | null;
+          is_favorited?: boolean;
+          created_at?: string;
+        };
+      };
       digest_runs: {
         Row: {
-          id: string
-          run_date: string
-          status: string | null
-          items_fetched: number | null
-          items_stored: number | null
-          error_message: string | null
-          created_at: string
-        }
+          id: string;
+          run_date: string;
+          status: string | null;
+          items_fetched: number | null;
+          items_stored: number | null;
+          error_message: string | null;
+          created_at: string;
+        };
         Insert: {
-          id?: string
-          run_date: string
-          status?: string | null
-          items_fetched?: number | null
-          items_stored?: number | null
-          error_message?: string | null
-          created_at?: string
-        }
+          id?: string;
+          run_date: string;
+          status?: string | null;
+          items_fetched?: number | null;
+          items_stored?: number | null;
+          error_message?: string | null;
+          created_at?: string;
+        };
         Update: {
-          id?: string
-          run_date?: string
-          status?: string | null
-          items_fetched?: number | null
-          items_stored?: number | null
-          error_message?: string | null
-          created_at?: string
-        }
-      }
-    }
-  }
+          id?: string;
+          run_date?: string;
+          status?: string | null;
+          items_fetched?: number | null;
+          items_stored?: number | null;
+          error_message?: string | null;
+          created_at?: string;
+        };
+      };
+      rss_sources: {
+        Row: {
+          id: string;
+          url: string;
+          name: string;
+          category: string;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          url: string;
+          name: string;
+          category: string;
+          is_active?: boolean;
+        };
+        Update: {
+          id?: string;
+          url?: string;
+          name?: string;
+          category?: string;
+          is_active?: boolean;
+        };
+      };
+    };
+  };
 }

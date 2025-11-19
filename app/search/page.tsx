@@ -62,7 +62,8 @@ export default function SearchPage() {
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           {query ? (
             <>
-              Found {results.length} result{results.length !== 1 ? "s" : ""} for "{query}"
+              Found {results.length} result{results.length !== 1 ? "s" : ""} for
+              &quot;{query}&quot;
             </>
           ) : (
             "Enter a search query to find articles"
@@ -73,7 +74,7 @@ export default function SearchPage() {
       {results.length === 0 && query ? (
         <div className="text-center py-20">
           <p className="text-gray-600 dark:text-gray-400 text-lg">
-            No articles found for "{query}"
+            No articles found for &quot;{query}&quot;
           </p>
           <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
             Try a different search term

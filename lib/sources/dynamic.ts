@@ -4,12 +4,13 @@ import { Article } from "./rss";
 
 const parser = new Parser();
 
-interface RSSSource {
-  id: string;
-  url: string;
-  name: string;
-  category: string;
-  is_active: boolean;
+interface RedditPost {
+  data: {
+    title: string;
+    selftext?: string;
+    permalink: string;
+    created_utc: number;
+  };
 }
 
 async function fetchRedditPosts(
@@ -33,7 +34,7 @@ async function fetchRedditPosts(
 
     const data = await response.json();
 
-    return data.data.children.map((post: any) => ({
+    return data.data.children.map((post: RedditPost) => ({
       title: post.data.title,
       summary: post.data.selftext?.substring(0, 300) || "",
       url: `https://reddit.com${post.data.permalink}`,
@@ -51,19 +52,32 @@ export async function fetchFromAllSources(): Promise<Article[]> {
   try {
     // Fetch all active sources from database
     const { data: sources, error } = await supabase
-      .from('rss_sources')
-      .select('*')
-      .eq('is_active', true);
+      .from("rss_sources")
+      .select("*")
+      .eq("is_active", true);
 
     if (error) throw error;
 
+    if (!sources) return [];
+
+    const sourcesTyped = sources as {
+      id: string;
+      url: string;
+      name: string;
+      category: string;
+      is_active: boolean;
+    }[];
+
     const allArticles: Article[] = [];
 
-    for (const source of sources || []) {
+    for (const source of sourcesTyped) {
       // Handle Reddit sources separately
-      if (source.category === 'reddit') {
-        const subreddit = source.url.replace('r/', '');
-        const articles = await fetchRedditPosts(subreddit, getCategoryForReddit(source.name));
+      if (source.category === "reddit") {
+        const subreddit = source.url.replace("r/", "");
+        const articles = await fetchRedditPosts(
+          subreddit,
+          getCategoryForReddit(source.name)
+        );
         allArticles.push(...articles);
         continue;
       }
@@ -87,16 +101,22 @@ export async function fetchFromAllSources(): Promise<Article[]> {
 
     return allArticles;
   } catch (error) {
-    console.error('Error fetching from all sources:', error);
+    console.error("Error fetching from all sources:", error);
     return [];
   }
 }
 
 // Map Reddit source names to categories
 function getCategoryForReddit(name: string): string {
-  if (name.includes('formula1') || name.includes('F1')) return 'f1';
-  if (name.includes('Flutter') || name.includes('django') || name.includes('AndroidDev')) return 'dev_tools';
-  if (name.includes('MachineLearning') || name.includes('LocalLLaMA')) return 'ml_news';
-  if (name.includes('Productivity')) return 'productivity';
-  return 'misc';
+  if (name.includes("formula1") || name.includes("F1")) return "f1";
+  if (
+    name.includes("Flutter") ||
+    name.includes("django") ||
+    name.includes("AndroidDev")
+  )
+    return "dev_tools";
+  if (name.includes("MachineLearning") || name.includes("LocalLLaMA"))
+    return "ml_news";
+  if (name.includes("Productivity")) return "productivity";
+  return "misc";
 }
