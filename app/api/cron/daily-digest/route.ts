@@ -43,7 +43,23 @@ export async function GET() {
       ...redditArticles,
     ];
 
-    console.log(`Fetched ${allArticles.length} articles total.`);
+    // Sample latest 15 from each source for balanced processing
+    const sampleSize = 15;
+    const sampledArticles = [
+      ...f1Articles.slice(0, sampleSize),
+      ...techArticles.slice(0, sampleSize),
+      ...mlArticles.slice(0, sampleSize),
+      ...productivityArticles.slice(0, sampleSize),
+      ...randomArticles.slice(0, sampleSize),
+      ...redditArticles.slice(0, sampleSize),
+    ];
+
+    // Shuffle to randomize order and avoid bias
+    sampledArticles.sort(() => Math.random() - 0.5);
+
+    console.log(
+      `Fetched ${allArticles.length} articles total, sampled ${sampledArticles.length} for processing.`
+    );
     console.log("Articles fetched from sources:");
     console.log(`F1 RSS: ${f1Articles.length}`);
     console.log(`Tech RSS: ${techArticles.length}`);
@@ -53,7 +69,7 @@ export async function GET() {
     console.log(`Reddit: ${redditArticles.length}`);
 
     // 2. Process with AI
-    const processedItems = await processWithAI(allArticles);
+    const processedItems = await processWithAI(sampledArticles);
     console.log(`AI processed ${processedItems.length} relevant items.`);
     console.log("Items processed by AI:");
     console.log(processedItems);
@@ -81,7 +97,7 @@ export async function GET() {
       await supabaseAdmin.from("digest_runs").insert({
         run_date: today,
         status: "success",
-        items_fetched: allArticles.length,
+        items_fetched: sampledArticles.length,
         items_stored: processedItems.length,
       } as never);
     } else {
@@ -90,7 +106,7 @@ export async function GET() {
       await supabaseAdmin.from("digest_runs").insert({
         run_date: today,
         status: "success",
-        items_fetched: allArticles.length,
+        items_fetched: sampledArticles.length,
         items_stored: 0,
         error_message: "No relevant items found",
       } as never);

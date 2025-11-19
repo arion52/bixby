@@ -13,8 +13,8 @@ export async function processWithAI(
 ): Promise<ProcessedItem[]> {
   if (articles.length === 0) return [];
 
-  // Limit to 50 articles to avoid token limits (simple heuristic)
-  const articlesToProcess = articles.slice(0, 50);
+  // Process all sampled articles (up to 90, balanced across sources)
+  const articlesToProcess = articles;
 
   const prompt = `
 You are a personal news curator for Jason, a 20-year-old CS student and mobile developer.
@@ -31,6 +31,8 @@ Filter these articles and only include items that:
 3. Match Jason's specific interests above
 
 Do not classify everything as F1. Only tag articles that are exclusively about motorsport under 'f1'. Articles about tech, AI, tools, dev, productivity, or general news MUST go into their appropriate categories.
+
+Aim for 8-12 relevant items total, ensuring at least 2 from each main category: f1, dev_tools, ml_news, productivity. If a category has fewer good matches, prioritize quality over quantity.
 
 
 For each relevant item, provide:
@@ -59,7 +61,7 @@ Return ONLY a JSON array:
   }
 ]
 
-Be selective. Better to have 5 great items than 20 mediocre ones.
+Be selective but comprehensive. Prioritize quality, but ensure coverage across categories.
 `;
 
   try {
@@ -74,7 +76,7 @@ Be selective. Better to have 5 great items than 20 mediocre ones.
           "X-Title": "Personal Daily Digest", // Optional
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-r1-distill-llama-70b:free",
+          model: "openai/gpt-oss-20b:free",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.3,
         }),
@@ -82,6 +84,11 @@ Be selective. Better to have 5 great items than 20 mediocre ones.
     );
 
     if (!response.ok) {
+      console.error(
+        `OpenRouter API error: ${response.statusText}`,
+        await response.text()
+      );
+      console.log("model used: openai/gpt-oss-20b:free");
       throw new Error(`OpenRouter API error: ${response.statusText}`);
     }
 
