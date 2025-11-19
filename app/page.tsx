@@ -1,7 +1,7 @@
 "use client";
 
 import { DigestCard } from "@/components/DigestCard";
-import { format } from "date-fns";
+import { format, toZonedTime } from "date-fns-tz";
 import { Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -97,7 +97,7 @@ export default function Home() {
     <div className="px-4 md:px-8 lg:px-16 py-16">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-          Bixby Digest for {format(new Date(date), "MMMM do, yyyy")}
+          Bixby Digest for {format(toZonedTime(new Date(date), "Asia/Kolkata"), "MMMM do, yyyy")}
         </h1>
         <p className="text-neutral-500 dark:text-neutral-300 mt-2">
           Good morning, Jason. Here are your top updates.
