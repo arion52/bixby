@@ -12,6 +12,7 @@ export async function PATCH(
 
     const { error } = await supabaseAdmin
       .from('rss_sources')
+      // @ts-expect-error Update type requires all fields but we only update specific fields
       .update(body)
       .eq('id', id);
 

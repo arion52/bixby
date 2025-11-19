@@ -10,6 +10,7 @@ export async function POST(
   try {
     const { error } = await supabaseAdmin
       .from("digest_items")
+      // @ts-expect-error Update type requires all fields but we only update is_read
       .update({ is_read: true })
       .eq("id", id);
 

@@ -2,7 +2,7 @@
 
 import { DigestCard } from "@/components/DigestCard";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 interface DigestItem {
   id: string;
@@ -16,7 +16,7 @@ interface DigestItem {
   date: string;
 }
 
-export default function SearchPage() {
+function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const [results, setResults] = useState<DigestItem[]>([]);
@@ -88,5 +88,19 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900 dark:border-gray-200"></div>
+        </div>
+      }
+    >
+      <SearchResults />
+    </Suspense>
   );
 }

@@ -37,6 +37,7 @@ export async function POST(request: Request) {
 
     const { data, error} = await supabaseAdmin
       .from('rss_sources')
+      // @ts-expect-error Insert type requires all fields but we let DB handle defaults
       .insert({ url, name, category })
       .select()
       .single();

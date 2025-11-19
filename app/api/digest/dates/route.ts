@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+interface DigestDate {
+  date: string;
+}
+
 export async function GET() {
   try {
     // Get distinct dates that have digest items
@@ -18,7 +22,8 @@ export async function GET() {
     }
 
     // Extract unique dates
-    const uniqueDates = [...new Set(data?.map(item => item.date) || [])];
+    const typedData = (data || []) as DigestDate[];
+    const uniqueDates = [...new Set(typedData.map(item => item.date))];
 
     return NextResponse.json(uniqueDates);
   } catch (error) {
