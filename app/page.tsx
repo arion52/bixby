@@ -40,7 +40,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black dark:border-gray-200"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neutral-900 dark:border-neutral-100"></div>
       </div>
     );
   }
@@ -48,10 +48,10 @@ export default function Home() {
   if (!date || items.length === 0) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
           No digest available yet.
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-neutral-500 dark:text-neutral-300 mt-2">
           Check back later or ensure the cron job has run.
         </p>
       </div>
@@ -59,12 +59,12 @@ export default function Home() {
   }
 
   return (
-    <div>
+    <div className="px-4 md:px-8 lg:px-16 py-16">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
           Bixby Digest for {format(new Date(date), "MMMM do, yyyy")}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-neutral-500 dark:text-neutral-300 mt-2">
           Good morning, Jason. Here are your top updates.
         </p>
       </header>

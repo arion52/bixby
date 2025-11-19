@@ -1,16 +1,16 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendDigestEmail(date: string, itemCount: number) {
   if (!process.env.USER_EMAIL) {
-    console.error('USER_EMAIL not set');
+    console.error("USER_EMAIL not set");
     return;
   }
 
   try {
     await resend.emails.send({
-      from: 'Bixby <digest@jacyverse.tech>',
+      from: "Bixby <digest@bixby.jacyverse.tech>",
       to: process.env.USER_EMAIL,
       subject: `Your Bixby Digest for ${date}`,
       html: `
@@ -34,7 +34,7 @@ export async function sendDigestEmail(date: string, itemCount: number) {
     });
     console.log(`Email sent to ${process.env.USER_EMAIL}`);
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error("Failed to send email:", error);
     throw error;
   }
 }

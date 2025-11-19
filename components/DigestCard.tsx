@@ -42,33 +42,31 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
       case "f1":
         return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800";
       case "dev_tools":
-        return "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800";
+        return "bg-neutral-200 dark:bg-neutral-900 text-neutral-800 dark:text-white border-neutral-300 dark:border-neutral-800";
       case "ml_news":
         return "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800";
       case "productivity":
         return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800";
       default:
-        return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700";
+        return "bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-white border-neutral-200 dark:border-neutral-800";
     }
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col h-full group">
-      <div className="flex justify-between items-start mb-3">
+    <div className="bg-neutral-50 dark:bg-neutral-900 border border-transparent rounded-2xl p-6 shadow-none hover:shadow-md transition-all duration-200 flex flex-col h-full group">
+      <div className="flex justify-between items-start mb-4">
         <span
-          className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${getCategoryColor(
+          className={`text-xs font-medium px-3 py-1 rounded-lg border ${getCategoryColor(
             item.category
-          )}`}
+          )} tracking-wide`}
         >
           {item.category.replace("_", " ").toUpperCase()}
         </span>
         <button
           onClick={toggleFavorite}
           disabled={isLoading}
-          className={`p-1.5 rounded-full transition-colors ${
-            item.is_favorited
-              ? "text-yellow-400 hover:bg-yellow-50"
-              : "text-gray-300 hover:bg-gray-100 hover:text-gray-400"
+          className={`p-2 rounded-lg transition-colors border-0 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 ${
+            item.is_favorited ? "text-yellow-400" : "text-neutral-400"
           }`}
           aria-label={item.is_favorited ? "Unfavorite" : "Favorite"}
         >
@@ -78,27 +76,27 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
         </button>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+      <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors">
         <a
           href={item.source_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-start gap-2"
+          className="flex items-start gap-2 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded"
         >
           {item.title}
         </a>
       </h3>
 
-      <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 grow">
+      <p className="text-neutral-600 dark:text-neutral-300 text-base leading-relaxed mb-6 grow">
         {item.summary}
       </p>
 
-      <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
+      <div className="flex justify-between items-center pt-4 border-t border-neutral-100 dark:border-neutral-800 mt-auto">
         <div className="flex flex-col">
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
+          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 truncate max-w-[150px]">
             {item.source_name || "Unknown Source"}
           </span>
-          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          <span className="text-xs text-neutral-300 dark:text-neutral-600">
             {format(new Date(item.date), "MMM d, yyyy")}
           </span>
         </div>
@@ -107,7 +105,7 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
           href={item.source_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          className="text-neutral-300 dark:text-neutral-500 hover:text-primary dark:hover:text-white transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
         </a>
