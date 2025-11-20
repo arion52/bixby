@@ -4,6 +4,7 @@ import { DigestCard } from "@/components/DigestCard";
 import { format, toZonedTime } from "date-fns-tz";
 import { Filter } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase-client";
 
 interface DigestItem {
   id: string;
@@ -29,17 +30,45 @@ export default function Home() {
   const [date, setDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [userName, setUserName] = useState<string>("there");
 
-  // Load saved category preferences from localStorage
+  const supabase = createClient();
+
+  // Get user info and preferences
   useEffect(() => {
-    const saved = localStorage.getItem("selectedCategories");
-    if (saved) {
-      setSelectedCategories(JSON.parse(saved));
-    } else {
-      // Default: all categories enabled
-      setSelectedCategories(CATEGORIES.map((c) => c.id));
-    }
-  }, []);
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserName(user.user_metadata?.name || user.email?.split("@")[0] || "there");
+
+        // Load user preferences from database
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("id, user_preferences(*)")
+          .eq("auth_user_id", user.id)
+          .single();
+
+        const prefs = profile?.user_preferences as { preferred_categories?: string[] } | undefined;
+        if (prefs?.preferred_categories && Array.isArray(prefs.preferred_categories)) {
+          setSelectedCategories(prefs.preferred_categories);
+        } else {
+          // Default: all categories enabled
+          setSelectedCategories(CATEGORIES.map((c) => c.id));
+        }
+      } else {
+        // Not logged in - load from localStorage as fallback
+        const saved = localStorage.getItem("selectedCategories");
+        if (saved) {
+          setSelectedCategories(JSON.parse(saved));
+        } else {
+          setSelectedCategories(CATEGORIES.map((c) => c.id));
+        }
+      }
+    };
+
+    loadUserData();
+  }, [supabase]);
 
   useEffect(() => {
     async function fetchDigest() {
@@ -58,14 +87,31 @@ export default function Home() {
     fetchDigest();
   }, []);
 
-  const toggleCategory = (categoryId: string) => {
-    setSelectedCategories((prev) => {
-      const newSelection = prev.includes(categoryId)
-        ? prev.filter((c) => c !== categoryId)
-        : [...prev, categoryId];
+  const toggleCategory = async (categoryId: string) => {
+    const newSelection = selectedCategories.includes(categoryId)
+      ? selectedCategories.filter((c) => c !== categoryId)
+      : [...selectedCategories, categoryId];
+
+    setSelectedCategories(newSelection);
+
+    // Save to database if logged in, otherwise localStorage
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .single();
+
+      if (profile) {
+        await supabase
+          .from("user_preferences")
+          .update({ preferred_categories: newSelection })
+          .eq("user_id", profile.id);
+      }
+    } else {
       localStorage.setItem("selectedCategories", JSON.stringify(newSelection));
-      return newSelection;
-    });
+    }
   };
 
   const filteredItems = items.filter((item) =>
@@ -100,7 +146,7 @@ export default function Home() {
           Bixby Digest for {format(toZonedTime(new Date(date), "Asia/Kolkata"), "MMMM do, yyyy")}
         </h1>
         <p className="text-neutral-500 dark:text-neutral-300 mt-2">
-          Good morning, Jason. Here are your top updates.
+          Good morning, {userName}. Here are your top updates.
         </p>
       </header>
 

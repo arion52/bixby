@@ -2,7 +2,8 @@
 
 import { format } from "date-fns";
 import { ExternalLink, Star } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase-client";
 
 interface DigestItem {
   id: string;
@@ -13,7 +14,7 @@ interface DigestItem {
   source_url: string;
   source_name: string;
   category: string;
-  is_favorited: boolean;
+  is_favorited?: boolean;
   is_read?: boolean;
   date: string;
 }
@@ -22,10 +23,50 @@ interface DigestCardProps {
   item: DigestItem;
 }
 
-export function DigestCard({ item: initialItem }: DigestCardProps) {
-  const [item, setItem] = useState(initialItem);
+export function DigestCard({ item }: DigestCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showTldr, setShowTldr] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isRead, setIsRead] = useState(false);
+  const supabase = createClient();
+
+  // Fetch user-specific favorite/read status
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .single();
+
+      if (!profile) return;
+
+      // Check if favorited
+      const { data: favorite } = await supabase
+        .from("user_favorites")
+        .select("id")
+        .eq("user_id", profile.id)
+        .eq("digest_item_id", item.id)
+        .single();
+
+      setIsFavorited(!!favorite);
+
+      // Check if read
+      const { data: readStatus } = await supabase
+        .from("user_read_status")
+        .select("id")
+        .eq("user_id", profile.id)
+        .eq("digest_item_id", item.id)
+        .single();
+
+      setIsRead(!!readStatus);
+    };
+
+    fetchUserStatus();
+  }, [item.id, supabase]);
 
   // Calculate reading time (assuming 200 words per minute)
   const calculateReadingTime = (text: string): number => {
@@ -41,7 +82,8 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
     try {
       const res = await fetch(`/api/favorites/${item.id}`, { method: "POST" });
       if (res.ok) {
-        setItem((prev) => ({ ...prev, is_favorited: !prev.is_favorited }));
+        const data = await res.json();
+        setIsFavorited(data.is_favorited);
       }
     } catch (error) {
       console.error("Failed to toggle favorite", error);
@@ -51,8 +93,8 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
   };
 
   const markAsRead = async () => {
-    if (!item.is_read) {
-      setItem((prev) => ({ ...prev, is_read: true }));
+    if (!isRead) {
+      setIsRead(true);
       try {
         await fetch(`/api/read/${item.id}`, { method: "POST" });
       } catch (error) {
@@ -123,12 +165,12 @@ export function DigestCard({ item: initialItem }: DigestCardProps) {
           onClick={toggleFavorite}
           disabled={isLoading}
           className={`p-2 rounded-lg transition-colors border-0 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 ${
-            item.is_favorited ? "text-yellow-400" : "text-neutral-400"
+            isFavorited ? "text-yellow-400" : "text-neutral-400"
           }`}
-          aria-label={item.is_favorited ? "Unfavorite" : "Favorite"}
+          aria-label={isFavorited ? "Unfavorite" : "Favorite"}
         >
           <Star
-            className={`w-5 h-5 ${item.is_favorited ? "fill-current" : ""}`}
+            className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`}
           />
         </button>
       </div>

@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -8,28 +8,57 @@ export async function POST(
   const { id } = await params;
 
   try {
-    // First get current status
-    const { data: current, error: fetchError } = await supabase
-      .from("digest_items")
-      .select("is_favorited")
-      .eq("id", id)
-      .single<{ is_favorited: boolean }>();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (fetchError) throw fetchError;
-    if (!current) throw new Error("Item not found");
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const newStatus = !current.is_favorited;
+    // Get user profile
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
 
-    const { error: updateError } = await supabaseAdmin
-      .from("digest_items")
-      // @ts-expect-error Update type requires all fields but we only update is_favorited
-      .update({ is_favorited: newStatus })
-      .eq("id", id);
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
 
-    if (updateError) throw updateError;
+    // Check if already favorited
+    const { data: existing } = await supabase
+      .from("user_favorites")
+      .select("id")
+      .eq("user_id", profile.id)
+      .eq("digest_item_id", id)
+      .single();
 
-    return NextResponse.json({ success: true, is_favorited: newStatus });
-  } catch {
+    if (existing) {
+      // Remove from favorites
+      const { error } = await supabase
+        .from("user_favorites")
+        .delete()
+        .eq("user_id", profile.id)
+        .eq("digest_item_id", id);
+
+      if (error) throw error;
+
+      return NextResponse.json({ success: true, is_favorited: false });
+    } else {
+      // Add to favorites
+      const { error } = await supabase
+        .from("user_favorites")
+        .insert({ user_id: profile.id, digest_item_id: id });
+
+      if (error) throw error;
+
+      return NextResponse.json({ success: true, is_favorited: true });
+    }
+  } catch (error) {
+    console.error("Failed to update favorite:", error);
     return NextResponse.json(
       { error: "Failed to update favorite" },
       { status: 500 }

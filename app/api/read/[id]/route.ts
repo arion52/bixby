@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -8,13 +8,33 @@ export async function POST(
   const { id } = await params;
 
   try {
-    const { error } = await supabaseAdmin
-      .from("digest_items")
-      // @ts-expect-error Update type requires all fields but we only update is_read
-      .update({ is_read: true })
-      .eq("id", id);
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (error) throw error;
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    // Insert or ignore if already exists
+    await supabase
+      .from("user_read_status")
+      .upsert(
+        { user_id: profile.id, digest_item_id: id },
+        { onConflict: "user_id,digest_item_id", ignoreDuplicates: true }
+      );
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,14 +1,47 @@
 "use client";
 
-import { Newspaper, Search } from "lucide-react";
+import { Newspaper, Search, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase-client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Get initial user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        setUserName(user.user_metadata?.name || user.email?.split("@")[0] || "User");
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUserName(
+          session.user.user_metadata?.name ||
+            session.user.email?.split("@")[0] ||
+            "User"
+        );
+      } else {
+        setUserName(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   const isActive = (path: string) => {
     if (path === "/" && pathname === "/") return true;
@@ -21,6 +54,12 @@ export function Navbar() {
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
   };
 
   return (
@@ -48,36 +87,40 @@ export function Navbar() {
               >
                 Today
               </Link>
-              <Link
-                href="/favorites"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive("/favorites")
-                    ? "border-black dark:border-white text-neutral-900 dark:text-white"
-                    : "border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200"
-                }`}
-              >
-                Favorites
-              </Link>
-              <Link
-                href="/digest/archive"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive("/digest")
-                    ? "border-black dark:border-white text-neutral-900 dark:text-white"
-                    : "border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200"
-                }`}
-              >
-                Archive
-              </Link>
-              <Link
-                href="/settings"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive("/settings")
-                    ? "border-black dark:border-white text-neutral-900 dark:text-white"
-                    : "border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200"
-                }`}
-              >
-                Settings
-              </Link>
+              {user && (
+                <>
+                  <Link
+                    href="/favorites"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/favorites")
+                        ? "border-black dark:border-white text-neutral-900 dark:text-white"
+                        : "border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    }`}
+                  >
+                    Favorites
+                  </Link>
+                  <Link
+                    href="/digest/archive"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/digest")
+                        ? "border-black dark:border-white text-neutral-900 dark:text-white"
+                        : "border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    }`}
+                  >
+                    Archive
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive("/settings")
+                        ? "border-black dark:border-white text-neutral-900 dark:text-white"
+                        : "border-transparent text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    }`}
+                  >
+                    Settings
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -92,9 +135,33 @@ export function Navbar() {
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             </form>
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">
-              Good Morning, Jason
-            </div>
+
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    {userName}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </div>
