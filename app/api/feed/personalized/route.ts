@@ -38,7 +38,20 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Personalized feed error:", error);
+      console.log("Falling back to recent items (user may not have interaction history yet)");
       // Fallback to recent items
+      const { data: fallbackFeed } = await supabase
+        .from("digest_items")
+        .select("*")
+        .order("date", { ascending: false })
+        .limit(limit);
+
+      return NextResponse.json({ items: fallbackFeed || [], personalized: false });
+    }
+
+    // If feed is empty (cold start - no interactions yet), fallback to recent
+    if (!feed || feed.length === 0) {
+      console.log("User has no personalized recommendations yet, showing recent items");
       const { data: fallbackFeed } = await supabase
         .from("digest_items")
         .select("*")

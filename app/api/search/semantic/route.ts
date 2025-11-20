@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Perform vector similarity search
     // Using pgvector's <=> operator for cosine distance (lower = more similar)
     const { data: results, error } = await supabase.rpc("search_digest_items", {
-      query_embedding: `[${queryEmbedding.join(",")}]`,
+      query_embedding: queryEmbedding, // Pass as array, will be cast to vector by Postgres
       match_threshold: 0.3, // Minimum similarity score (0-1, higher = more similar)
       match_count: limit,
     });
