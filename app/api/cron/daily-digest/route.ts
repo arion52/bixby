@@ -2,6 +2,7 @@ import { processWithAI } from "@/lib/ai";
 import { sendDigestEmail } from "@/lib/email";
 import { fetchFromAllSources } from "@/lib/sources/dynamic";
 import { supabaseAdmin } from "@/lib/supabase";
+import { generateEmbeddingBatch, createEmbeddingText } from "@/lib/embeddings";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300; // 5 minutes max for cron job
@@ -54,15 +55,37 @@ export async function GET(request: NextRequest) {
     console.log("Items processed by AI:");
     console.log(processedItems);
 
-    // 3. Store in Supabase
+    // 3. Generate embeddings for all processed items
+    console.log("Generating embeddings for semantic search...");
+    const embeddingTexts = processedItems.map((item) =>
+      createEmbeddingText({
+        title: item.title,
+        summary: item.summary,
+        category: item.category,
+      })
+    );
+
+    let embeddings: number[][] = [];
+    try {
+      embeddings = await generateEmbeddingBatch(embeddingTexts);
+      console.log(`Generated ${embeddings.length} embeddings`);
+    } catch (error) {
+      console.error("Failed to generate embeddings, continuing without them:", error);
+      // Continue without embeddings if it fails - don't block the whole digest
+    }
+
+    // 4. Store in Supabase with embeddings
     if (processedItems.length > 0) {
       const today = new Date().toISOString().split("T")[0];
 
+      const itemsWithEmbeddings = processedItems.map((item, index) => ({
+        date: today,
+        ...item,
+        embedding: embeddings[index] ? `[${embeddings[index].join(",")}]` : null,
+      }));
+
       const { error } = await supabaseAdmin.from("digest_items").insert(
-        processedItems.map((item) => ({
-          date: today,
-          ...item,
-        })) as never
+        itemsWithEmbeddings as never
       );
 
       if (error) {
@@ -70,10 +93,10 @@ export async function GET(request: NextRequest) {
         throw error;
       }
 
-      // 4. Send email
+      // 5. Send email
       await sendDigestEmail(today, processedItems.length);
 
-      // 5. Log success
+      // 6. Log success
       await supabaseAdmin.from("digest_runs").insert({
         run_date: today,
         status: "success",

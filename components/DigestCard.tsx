@@ -28,6 +28,7 @@ export function DigestCard({ item }: DigestCardProps) {
   const [showTldr, setShowTldr] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isRead, setIsRead] = useState(false);
+  const [clickTime, setClickTime] = useState<number | null>(null);
   const supabase = createClient();
 
   // Fetch user-specific favorite/read status
@@ -77,6 +78,26 @@ export function DigestCard({ item }: DigestCardProps) {
 
   const readingTime = calculateReadingTime(item.summary);
 
+  // Track interaction for personalization
+  const trackInteraction = async (
+    interactionType: "click" | "read" | "favorite" | "skip",
+    dwellTimeSeconds?: number
+  ) => {
+    try {
+      await fetch("/api/interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          digest_item_id: item.id,
+          interaction_type: interactionType,
+          dwell_time_seconds: dwellTimeSeconds,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to track interaction:", error);
+    }
+  };
+
   const toggleFavorite = async () => {
     setIsLoading(true);
     try {
@@ -84,6 +105,11 @@ export function DigestCard({ item }: DigestCardProps) {
       if (res.ok) {
         const data = await res.json();
         setIsFavorited(data.is_favorited);
+
+        // Track favorite interaction
+        if (data.is_favorited) {
+          void trackInteraction("favorite");
+        }
       }
     } catch (error) {
       console.error("Failed to toggle favorite", error);
@@ -101,6 +127,26 @@ export function DigestCard({ item }: DigestCardProps) {
         console.error("Failed to mark as read", error);
       }
     }
+  };
+
+  const handleCardClick = () => {
+    // Record click time for dwell time calculation
+    setClickTime(Date.now());
+
+    // Track click interaction
+    void trackInteraction("click");
+  };
+
+  const handleLinkClick = () => {
+    // Calculate dwell time if user clicked earlier
+    let dwellTime = 0;
+    if (clickTime) {
+      dwellTime = Math.round((Date.now() - clickTime) / 1000);
+    }
+
+    // Mark as read and track interaction
+    markAsRead();
+    void trackInteraction("read", dwellTime);
   };
 
   const getCategoryColor = (category: string) => {
@@ -140,9 +186,12 @@ export function DigestCard({ item }: DigestCardProps) {
   const sentimentBadge = getSentimentBadge(item.sentiment);
 
   return (
-    <div className={`bg-neutral-50 dark:bg-neutral-900 border border-transparent rounded-2xl p-6 shadow-none hover:shadow-md transition-all duration-200 flex flex-col h-full group ${
-      item.is_read ? "opacity-60" : ""
-    }`}>
+    <div
+      onClick={handleCardClick}
+      className={`bg-neutral-50 dark:bg-neutral-900 border border-transparent rounded-2xl p-6 shadow-none hover:shadow-md transition-all duration-200 flex flex-col h-full group ${
+        item.is_read ? "opacity-60" : ""
+      }`}
+    >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -180,7 +229,7 @@ export function DigestCard({ item }: DigestCardProps) {
           href={item.source_url}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={markAsRead}
+          onClick={handleLinkClick}
           className="flex items-start gap-2 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded"
         >
           {item.title}
