@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { createClient } from "@/lib/supabase-client";
 
 interface RSSSource {
   id: string;
@@ -16,10 +17,24 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [newSource, setNewSource] = useState({ url: "", name: "", category: "dev_tools" });
   const [adding, setAdding] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchSources();
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email === "jazjasonlee@gmail.com") {
+        setIsAdmin(true);
+      }
+    } catch (error) {
+      console.error("Failed to check admin status:", error);
+    }
+  };
 
   const fetchSources = async () => {
     try {
@@ -177,13 +192,15 @@ export default function SettingsPage() {
                         <ToggleLeft className="w-6 h-6 text-neutral-400" />
                       )}
                     </button>
-                    <button
-                      onClick={() => deleteSource(source.id)}
-                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-600"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => deleteSource(source.id)}
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-600"
+                        title="Delete (Admin Only)"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

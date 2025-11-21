@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 
 // GET all RSS sources
 export async function GET() {
@@ -25,6 +26,16 @@ export async function GET() {
 // POST a new RSS source
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { url, name, category } = body;
 
@@ -35,10 +46,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get user profile ID
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
     const { data, error} = await supabaseAdmin
       .from('rss_sources')
       // @ts-expect-error Insert type requires all fields but we let DB handle defaults
-      .insert({ url, name, category })
+      .insert({ url, name, category, user_id: profile?.id })
       .select()
       .single();
 

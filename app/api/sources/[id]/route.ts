@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-server';
 
 // PATCH update RSS source (toggle active or edit)
 export async function PATCH(
@@ -28,12 +29,33 @@ export async function PATCH(
   }
 }
 
-// DELETE RSS source
+// DELETE RSS source (admin only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const { data: isAdminResult } = await supabaseAdmin
+      .rpc('is_admin', { user_email: user.email });
+
+    if (!isAdminResult) {
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
 
     const { error } = await supabaseAdmin
