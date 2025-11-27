@@ -8,6 +8,14 @@ export type Json =
 
 export interface Database {
   public: {
+    Functions: {
+      is_admin: {
+        Args: {
+          user_email: string;
+        };
+        Returns: boolean;
+      };
+    };
     Tables: {
       digest_items: {
         Row: {
