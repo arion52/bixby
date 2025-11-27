@@ -9,14 +9,17 @@
 Go to **Supabase Dashboard → SQL Editor**:
 
 ### Migration 1: Auth Tables
+
 Copy and paste `supabase/migrations/001_enable_pgvector_and_create_auth_tables.sql`
 → Click **Run** → ✅ Should succeed
 
 ### Migration 2: Embeddings
+
 Copy and paste `supabase/migrations/002_add_embeddings_and_reading_patterns.sql`
 → Click **Run** → ✅ Should succeed
 
 ### Migration 3: Personalization
+
 Copy and paste `supabase/migrations/003_implement_preference_vectors.sql`
 → Click **Run** → ✅ Should succeed
 
@@ -63,11 +66,13 @@ WHERE user_id = (SELECT id FROM user_profiles WHERE email = 'your-email@example.
 ## What Changed?
 
 **Before:**
+
 - ❌ Recommendations were just recent articles
 - ❌ Search was keyword-only
 - ❌ Same results for everyone
 
 **After:**
+
 - ✅ Recommendations based on YOUR reading history
 - ✅ Search understands meaning (semantic search)
 - ✅ Results personalized to YOUR interests
@@ -83,3 +88,10 @@ WHERE user_id = (SELECT id FROM user_profiles WHERE email = 'your-email@example.
 ---
 
 **That's it! You now have AI-powered personalization.** 🎉
+
+---
+
+## Environment vars added
+
+- `OPENROUTER_MODEL` (optional): override the default OpenRouter model used for AI completions. Defaults to `openai/gpt-3.5-turbo`.
+- `ENABLE_REDDIT` (optional): set to `true` to enable Reddit scraping. Disabled by default to avoid Reddit API blocks; prefer adding OAuth before enabling.

@@ -88,7 +88,8 @@ Be selective but comprehensive. Prioritize quality, but ensure coverage across c
           "X-Title": "Personal Daily Digest", // Optional
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-r1-0528:free",
+          // Use a supported OpenRouter model. Changeable via env if desired.
+          model: process.env.OPENROUTER_MODEL || "openai/gpt-3.5-turbo",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.3,
         }),
@@ -100,7 +101,10 @@ Be selective but comprehensive. Prioritize quality, but ensure coverage across c
         `OpenRouter API error: ${response.statusText}`,
         await response.text()
       );
-      console.log("model used: deepseek/deepseek-r1-0528:free");
+      console.log(
+        "model used:",
+        process.env.OPENROUTER_MODEL || "openai/gpt-3.5-turbo"
+      );
       throw new Error(`OpenRouter API error: ${response.statusText}`);
     }
 

@@ -16,6 +16,13 @@ export async function fetchRedditPosts(
   category: string,
   limit = 25
 ): Promise<Article[]> {
+  // If Reddit integration is disabled via env, skip fetching to avoid 403/429
+  if (process.env.ENABLE_REDDIT !== "true") {
+    console.warn(
+      `Reddit fetching disabled (ENABLE_REDDIT != true). Skipping r/${subreddit}`
+    );
+    return [];
+  }
   try {
     const response = await fetch(
       `https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=${limit}`,

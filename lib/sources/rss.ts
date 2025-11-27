@@ -14,7 +14,8 @@ export interface Article {
 export async function fetchProductivityRSS(): Promise<Article[]> {
   const feeds = [
     "https://www.lifehacker.com/rss",
-    "https://zapier.com/blog/rss/",
+    // Zapier's feed has changed over time; use feed.xml variant or remove if unavailable
+    "https://zapier.com/blog/feed.xml",
     "https://medium.com/feed/tag/productivity",
   ];
 
@@ -138,8 +139,9 @@ export async function fetchTechRSS(): Promise<Article[]> {
     "https://www.producthunt.com/feed", // Product Hunt
     "https://dev.to/feed",
     "https://blog.jetbrains.com/feed/",
-    "https://react.dev/blog/feed.xml",
-    "https://vercel.com/changelog/feed.xml",
+    // Updated React and Vercel feeds
+    "https://react.dev/rss.xml",
+    "https://vercel.com/atom",
   ];
 
   const articles: Article[] = [];
