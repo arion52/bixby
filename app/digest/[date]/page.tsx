@@ -63,6 +63,9 @@ export default function ArchiveDatePage() {
     );
   }
 
+  const officialItems = items.filter((item) => item.category === "official_news");
+  const otherItems = items.filter((item) => item.category !== "official_news");
+
   return (
     <div>
       <header className="mb-8">
@@ -72,11 +75,33 @@ export default function ArchiveDatePage() {
         <p className="text-gray-600 dark:text-gray-400 mt-2">Archive view.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map((item) => (
-          <DigestCard key={item.id} item={item} />
-        ))}
-      </div>
+      {officialItems.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-200 dark:border-gray-700">
+            Official Updates
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {officialItems.map((item) => (
+              <DigestCard key={item.id} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {otherItems.length > 0 && (
+        <div>
+           {officialItems.length > 0 && (
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-200 dark:border-gray-700">
+              Curated For You
+            </h2>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {otherItems.map((item) => (
+              <DigestCard key={item.id} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

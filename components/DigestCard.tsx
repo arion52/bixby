@@ -1,9 +1,9 @@
 "use client";
 
+import { createClient } from "@/lib/supabase-client";
 import { format } from "date-fns";
 import { ExternalLink, Star } from "lucide-react";
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase-client";
+import { useEffect, useState } from "react";
 
 interface DigestItem {
   id: string;
@@ -159,6 +159,8 @@ export function DigestCard({ item }: DigestCardProps) {
         return "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800";
       case "productivity":
         return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800";
+      case "official_news":
+        return "bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 border-sky-200 dark:border-sky-800";
       default:
         return "bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-white border-neutral-200 dark:border-neutral-800";
     }

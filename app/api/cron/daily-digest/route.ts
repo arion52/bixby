@@ -1,8 +1,9 @@
-import { processWithAI } from "@/lib/ai";
+import { processOfficialSourcesWithAI, processWithAI } from "@/lib/ai";
 import { sendDigestEmail } from "@/lib/email";
+import { createEmbeddingText, generateEmbeddingBatch } from "@/lib/embeddings";
 import { fetchFromAllSources } from "@/lib/sources/dynamic";
+import { fetchOfficialSources } from "@/lib/sources/official";
 import { supabaseAdmin } from "@/lib/supabase";
-import { generateEmbeddingBatch, createEmbeddingText } from "@/lib/embeddings";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 300; // 5 minutes max for cron job
@@ -55,9 +56,21 @@ export async function GET(request: NextRequest) {
     console.log("Items processed by AI:");
     console.log(processedItems);
 
+    // 2.5 Fetch Official Sources (Skip AI filtering, but still summarize)
+    console.log("Fetching official sources...");
+    const officialArticles = await fetchOfficialSources();
+    console.log(`Fetched ${officialArticles.length} official articles.`);
+    
+    // Process official sources with AI (summarization only, no filtering)
+    const processedOfficialItems = await processOfficialSourcesWithAI(officialArticles);
+    console.log(`AI processed ${processedOfficialItems.length} official items.`);
+
+    // Combine AI processed items with official items
+    const allProcessedItems = [...processedOfficialItems, ...processedItems];
+
     // 3. Generate embeddings for all processed items
     console.log("Generating embeddings for semantic search...");
-    const embeddingTexts = processedItems.map((item) =>
+    const embeddingTexts = allProcessedItems.map((item) =>
       createEmbeddingText({
         title: item.title,
         summary: item.summary,
@@ -75,10 +88,10 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Store in Supabase with embeddings
-    if (processedItems.length > 0) {
+    if (allProcessedItems.length > 0) {
       const today = new Date().toISOString().split("T")[0];
 
-      const itemsWithEmbeddings = processedItems.map((item, index) => ({
+      const itemsWithEmbeddings = allProcessedItems.map((item, index) => ({
         date: today,
         ...item,
         embedding: embeddings[index] ? `[${embeddings[index].join(",")}]` : null,
@@ -94,14 +107,14 @@ export async function GET(request: NextRequest) {
       }
 
       // 5. Send email
-      await sendDigestEmail(today, processedItems.length);
+      await sendDigestEmail(today, allProcessedItems.length);
 
       // 6. Log success
       await supabaseAdmin.from("digest_runs").insert({
         run_date: today,
         status: "success",
-        items_fetched: sampledArticles.length,
-        items_stored: processedItems.length,
+        items_fetched: sampledArticles.length + officialArticles.length,
+        items_stored: allProcessedItems.length,
       } as never);
     } else {
       console.log("No relevant items found today.");
@@ -109,7 +122,7 @@ export async function GET(request: NextRequest) {
       await supabaseAdmin.from("digest_runs").insert({
         run_date: today,
         status: "success",
-        items_fetched: sampledArticles.length,
+        items_fetched: sampledArticles.length + officialArticles.length,
         items_stored: 0,
         error_message: "No relevant items found",
       } as never);
@@ -117,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      itemsProcessed: processedItems.length,
+      itemsProcessed: allProcessedItems.length,
     });
   } catch (error: unknown) {
     console.error("Cron job failed:", error);
